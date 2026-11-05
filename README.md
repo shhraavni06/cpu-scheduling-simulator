@@ -133,3 +133,6 @@ ansible/      inventory, playbook, roles/cpu_scheduler (tasks, handlers, default
 kubernetes/   deployment.yaml (3 replicas + probes), service.yaml
 repo_link.txt GitHub repository URL
 ```
+
+## Git Feature Branch
+This section was added using a feature branch to demonstrate Git branching and merging.
