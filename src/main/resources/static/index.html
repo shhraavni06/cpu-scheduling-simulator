@@ -1,0 +1,534 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPU Scheduling Simulator</title>
+
+<style>
+:root {
+    --bg: #F5F7FA;
+    --white: #FFFFFF;
+    --teal: #0F766E;
+    --teal-light: #CCFBF1;
+    --purple: #7C3AED;
+    --text: #1E293B;
+    --muted: #64748B;
+    --border: #E2E8F0;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+header {
+    background: white;
+    padding: 20px 6%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+}
+
+.brand {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--teal);
+}
+
+.brand span { color: var(--purple); }
+
+.status {
+    color: var(--teal);
+    background: var(--teal-light);
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 35px auto;
+    padding: 0 20px;
+}
+
+.hero { margin-bottom: 25px; }
+
+.hero h1 {
+    font-size: 30px;
+    margin-bottom: 8px;
+}
+
+.hero p { color: var(--muted); margin-top: 0; }
+
+.card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 22px;
+    box-shadow: 0 4px 15px rgba(15,23,42,0.035);
+}
+
+.card h2 { font-size: 18px; margin-top: 0; }
+
+.controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 18px;
+    align-items: end;
+}
+
+label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+input, select {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: white;
+    font-size: 14px;
+    color: var(--text);
+}
+
+input:focus, select:focus {
+    outline: 2px solid #99F6E4;
+    border-color: var(--teal);
+}
+
+button {
+    border: none;
+    padding: 11px 17px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    transition: 0.2s;
+}
+
+button:hover { opacity: 0.88; transform: translateY(-1px); }
+
+.primary { background: var(--teal); color: white; }
+.secondary { background: #EDE9FE; color: var(--purple); }
+.remove { background: #FEE2E2; color: #B91C1C; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 18px;
+    min-width: 600px;
+}
+
+th, td {
+    padding: 13px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    font-size: 13px;
+}
+
+th {
+    color: var(--muted);
+    background: #F8FAFC;
+}
+
+.table-wrap { overflow-x: auto; }
+
+.actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+}
+
+.metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 16px;
+}
+
+.metric {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.metric p { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+.metric h2 { margin: 0; color: var(--teal); font-size: 27px; }
+
+.gantt {
+    display: flex;
+    overflow-x: auto;
+    padding: 18px 0;
+    align-items: stretch;
+}
+
+.gantt-item {
+    min-width: 75px;
+    text-align: center;
+    color: white;
+    padding: 17px 5px;
+    font-weight: 700;
+    border-radius: 7px;
+    margin-right: 3px;
+}
+
+.gantt-time {
+    display: flex;
+    gap: 0;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.gantt-time span {
+    min-width: 75px;
+    text-align: left;
+}
+
+.message {
+    padding: 13px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    display: none;
+    font-size: 14px;
+}
+
+.error { background: #FEE2E2; color: #991B1B; }
+.success { background: var(--teal-light); color: #115E59; }
+
+.hidden { display: none; }
+
+footer {
+    text-align: center;
+    padding: 25px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+@media(max-width:600px) {
+    .hero h1 { font-size: 24px; }
+    header { padding: 16px 5%; }
+    .card { padding: 17px; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="brand">CPU<span>Flow</span></div>
+    <div class="status">● Scheduling Engine</div>
+</header>
+
+<div class="container">
+
+    <section class="hero">
+        <h1>CPU Scheduling Simulator</h1>
+        <p>Visualize, execute and compare CPU scheduling algorithms in real time.</p>
+    </section>
+
+    <div id="message" class="message"></div>
+
+    <section class="card">
+        <h2>⚙ Scheduling Configuration</h2>
+
+        <div class="controls">
+            <div>
+                <label for="algorithm">Scheduling Algorithm</label>
+                <select id="algorithm" onchange="toggleQuantum()">
+                    <option value="fcfs">First Come First Serve (FCFS)</option>
+                    <option value="sjf">Shortest Job First (SJF)</option>
+                    <option value="round-robin">Round Robin (RR)</option>
+                    <option value="priority">Priority Scheduling</option>
+                </select>
+            </div>
+
+            <div id="quantumBox" class="hidden">
+                <label for="quantum">Time Quantum</label>
+                <input type="number" id="quantum" min="1" value="2">
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>📋 Process Details</h2>
+        <p style="color:#64748B;font-size:13px">
+            Enter the arrival time, burst time and priority for each process.
+            Lower priority numbers indicate higher priority.
+        </p>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Process ID</th>
+                        <th>Arrival Time</th>
+                        <th>Burst Time</th>
+                        <th>Priority</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="processTable"></tbody>
+            </table>
+        </div>
+
+        <div class="actions">
+            <button class="secondary" onclick="addProcess()">+ Add Process</button>
+            <button class="primary" onclick="runSimulation()">▶ Run Simulation</button>
+        </div>
+    </section>
+
+    <section id="results" class="hidden">
+
+        <h2>📊 Simulation Results</h2>
+
+        <div class="metrics">
+            <div class="metric">
+                <p>Average Waiting Time</p>
+                <h2 id="avgWaiting">0</h2>
+            </div>
+            <div class="metric">
+                <p>Average Turnaround Time</p>
+                <h2 id="avgTurnaround">0</h2>
+            </div>
+            <div class="metric">
+                <p>Total Processes</p>
+                <h2 id="totalProcesses">0</h2>
+            </div>
+        </div>
+
+        <section class="card" style="margin-top:22px">
+            <h2>📈 Gantt Chart</h2>
+            <div id="ganttChart" class="gantt"></div>
+            <div id="ganttTimes" class="gantt-time"></div>
+        </section>
+
+        <section class="card">
+            <h2>Process Execution Results</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Process</th>
+                            <th>Arrival</th>
+                            <th>Burst</th>
+                            <th>Priority</th>
+                            <th>Completion</th>
+                            <th>Turnaround</th>
+                            <th>Waiting</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultTable"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Execution Order</h2>
+            <p id="executionOrder" style="color:#0F766E;font-weight:700"></p>
+        </section>
+
+    </section>
+
+</div>
+
+<footer>CPUFlow · CPU Scheduling Algorithm Simulator</footer>
+
+<script>
+let processCount = 0;
+
+function addProcess(id = "", arrival = 0, burst = 1, priority = 1) {
+    processCount++;
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+        <td><input class="pid" value="${id || "P" + processCount}" aria-label="Process ID"></td>
+        <td><input class="arrival" type="number" min="0" value="${arrival}" aria-label="Arrival time"></td>
+        <td><input class="burst" type="number" min="1" value="${burst}" aria-label="Burst time"></td>
+        <td><input class="priority" type="number" min="1" value="${priority}" aria-label="Priority"></td>
+        <td><button class="remove" onclick="this.closest('tr').remove()">Remove</button></td>
+    `;
+
+    document.getElementById("processTable").appendChild(row);
+}
+
+function toggleQuantum() {
+    const isRR = document.getElementById("algorithm").value === "round-robin";
+    document.getElementById("quantumBox").classList.toggle("hidden", !isRR);
+}
+
+function showMessage(message, type) {
+    const box = document.getElementById("message");
+    box.textContent = message;
+    box.className = "message " + type;
+    box.style.display = "block";
+}
+
+async function runSimulation() {
+    const rows = [...document.querySelectorAll("#processTable tr")];
+
+    if (rows.length === 0) {
+        showMessage("Please add at least one process.", "error");
+        return;
+    }
+
+    const processes = rows.map(row => ({
+        id: row.querySelector(".pid").value.trim(),
+        arrivalTime: Number(row.querySelector(".arrival").value),
+        burstTime: Number(row.querySelector(".burst").value),
+        priority: Number(row.querySelector(".priority").value)
+    }));
+
+    const ids = processes.map(p => p.id);
+
+    if (processes.some(p => !p.id || !Number.isInteger(p.arrivalTime) ||
+        p.arrivalTime < 0 || !Number.isInteger(p.burstTime) ||
+        p.burstTime < 1 || !Number.isInteger(p.priority) || p.priority < 1)) {
+        showMessage("Enter valid IDs, non-negative arrival times, positive burst times and positive priorities.", "error");
+        return;
+    }
+
+    if (new Set(ids).size !== ids.length) {
+        showMessage("Each process must have a unique ID.", "error");
+        return;
+    }
+
+    const algorithm = document.getElementById("algorithm").value;
+    const body = { processes };
+
+    if (algorithm === "round-robin") {
+        const quantum = Number(document.getElementById("quantum").value);
+
+        if (!Number.isInteger(quantum) || quantum < 1) {
+            showMessage("Time quantum must be a positive whole number.", "error");
+            return;
+        }
+
+        body.timeQuantum = quantum;
+    }
+
+    const button = document.querySelector(".actions .primary");
+    button.disabled = true;
+    button.textContent = "Running...";
+
+    try {
+        const response = await fetch(`/schedule/${algorithm}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || data.error || "Scheduling request failed.");
+        }
+
+        displayResults(data);
+        showMessage("Simulation completed successfully!", "success");
+
+    } catch (error) {
+        showMessage("Unable to run simulation: " + error.message, "error");
+    } finally {
+        button.disabled = false;
+        button.textContent = "▶ Run Simulation";
+    }
+}
+
+function displayResults(data) {
+    document.getElementById("results").classList.remove("hidden");
+
+    document.getElementById("avgWaiting").textContent =
+        Number(data.averageWaitingTime).toFixed(2);
+
+    document.getElementById("avgTurnaround").textContent =
+        Number(data.averageTurnaroundTime).toFixed(2);
+
+    document.getElementById("totalProcesses").textContent =
+        data.processes.length;
+
+    const resultTable = document.getElementById("resultTable");
+    resultTable.innerHTML = "";
+
+    data.processes.forEach(p => {
+        const row = document.createElement("tr");
+
+        [p.id, p.arrivalTime, p.burstTime, p.priority,
+         p.completionTime, p.turnaroundTime, p.waitingTime]
+        .forEach(value => {
+            const cell = document.createElement("td");
+            cell.textContent = value ?? "-";
+            row.appendChild(cell);
+        });
+
+        resultTable.appendChild(row);
+    });
+
+    const colors = [
+        "#0F766E", "#7C3AED", "#D97706", "#2563EB",
+        "#DB2777", "#0891B2", "#65A30D", "#9333EA"
+    ];
+
+    const chart = document.getElementById("ganttChart");
+    const times = document.getElementById("ganttTimes");
+    chart.innerHTML = "";
+    times.innerHTML = "";
+
+    const gantt = data.gantt || [];
+
+    if (gantt.length) {
+        const start = Math.min(...gantt.map(g => g.start));
+        const end = Math.max(...gantt.map(g => g.end));
+        const totalDuration = Math.max(1, end - start);
+
+        gantt.forEach(g => {
+            const block = document.createElement("div");
+            const duration = g.end - g.start;
+
+            block.className = "gantt-item";
+            block.style.background =
+                colors[Math.max(0, data.processes.findIndex(p => p.id === g.processId)) % colors.length];
+
+            block.style.flex = `${duration} 0 0`;
+            block.style.minWidth = `${Math.max(45, duration / totalDuration * 600)}px`;
+            block.textContent = g.processId;
+            chart.appendChild(block);
+
+            const time = document.createElement("span");
+            time.style.flex = `${duration} 0 0`;
+            time.style.minWidth = block.style.minWidth;
+            time.textContent = g.start;
+            times.appendChild(time);
+        });
+
+        const lastTime = document.createElement("span");
+        lastTime.style.minWidth = "30px";
+        lastTime.textContent = gantt[gantt.length - 1].end;
+        times.appendChild(lastTime);
+    } else {
+        chart.textContent = "No Gantt chart data received.";
+    }
+
+    document.getElementById("executionOrder").textContent =
+        (data.executionOrder || []).join(" → ");
+}
+
+addProcess("P1", 0, 5, 2);
+addProcess("P2", 1, 3, 1);
+addProcess("P3", 2, 2, 3);
+</script>
+
+</body>
+</html>
